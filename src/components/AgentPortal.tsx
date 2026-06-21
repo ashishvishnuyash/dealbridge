@@ -184,7 +184,7 @@ export default function AgentPortal({
 
                 <div className="border-t border-slate-100 pt-4 text-center">
                   <p className="text-xs text-slate-500 font-medium">
-                    New to Deal Bridge Platform?{' '}
+                    New to Zsetu Platform?{' '}
                     <button onClick={() => setWorkflow('register')} className="text-[#005bc4] font-bold hover:underline cursor-pointer">
                       Submit Partner Registry
                     </button>
@@ -646,7 +646,7 @@ export default function AgentPortal({
               <div className="space-y-2">
                 <h1 className="text-2xl font-bold text-slate-900 font-display">Sovereign Asset Synced</h1>
                 <p className="text-slate-500 text-xs font-medium font-sans">
-                  The listing portfolio variables have been secure-hashed and committed to the Deal Bridge matching registry. Verification is active.
+                  The listing portfolio variables have been secure-hashed and committed to the Zsetu matching registry. Verification is active.
                 </p>
               </div>
 

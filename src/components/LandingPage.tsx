@@ -162,7 +162,7 @@ export default function LandingPage({ setCurrentView, setAgentWorkflow, setBuyer
       <section className="bg-slate-50 border-y border-slate-200/80 py-16 -mx-6 px-6">
         <div className="max-w-5xl mx-auto space-y-12">
           <div className="text-center space-y-1">
-            <h2 className="text-3xl font-display font-bold text-slate-950 tracking-tight">How Deal Bridge Works</h2>
+            <h2 className="text-3xl font-display font-bold text-slate-950 tracking-tight">How Zsetu Works</h2>
             <p className="text-slate-500 text-xs font-mono font-bold tracking-wide uppercase">High-velocity matching protocol</p>
           </div>
 

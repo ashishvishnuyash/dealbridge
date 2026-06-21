@@ -27,9 +27,9 @@ export const INITIAL_BUYERS: Buyer[] = [
   {
     id: 'BY-3291-JK',
     name: 'Sarah Jenkins',
-    companyName: 'Deal Bridge Tech Acquisitions',
+    companyName: 'Zsetu Tech Acquisitions',
     mobileNo: '+1 (555) 321-0987',
-    emailId: 's.jenkins@dealbridgetech.com',
+    emailId: 's.jenkins@zsetutech.com',
     reraNo: '#RERA-1192-B-02',
     portfolioSize: '$100M+',
     primaryAssetClass: 'Technology & Office',

@@ -1,5 +1,5 @@
 {
-  "name": "Deal Bridge",
+  "name": "Zsetu",
   "description": "An institutional-grade dual-sided matching exchange for commercial real estate agents and portfolio buyers.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]

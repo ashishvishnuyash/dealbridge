@@ -16,7 +16,7 @@ export default function Header({ currentView, setCurrentView, agentLoggedIn, buy
           className="flex items-center gap-2 text-[#005bc4] cursor-pointer hover:opacity-90 active:scale-95 transition-transform"
         >
           <span className="material-symbols-outlined text-[28px] text-[#005bc4]" style={{ fontVariationSettings: "'FILL' 1" }}>handshake</span>
-          <h1 className="font-display text-lg font-extrabold tracking-tight text-[#0a2540]">Deal Bridge</h1>
+          <h1 className="font-display text-lg font-extrabold tracking-tight text-[#0a2540]">Zsetu</h1>
         </button>
       </div>
 

@@ -74,7 +74,7 @@ async function startServer() {
         status: 'Active',
         image: req.body.image || 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80',
         tags: req.body.tags || ['Fiber Optic Ready', '24/7 Security'],
-        description: req.body.description || 'Institutional listing published inside the Deal Bridge secure network.',
+        description: req.body.description || 'Institutional listing published inside the Zsetu secure network.',
         matchScore: Math.floor(82 + Math.random() * 16)
       };
 
@@ -255,12 +255,12 @@ async function startServer() {
   // Unique Single-Page PHP Export Endpoint for Hostinger Custom Deployment!
   app.get('/api/export-php', (req, res) => {
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');
-    res.setHeader('Content-Disposition', 'attachment; filename="deal_bridge.php"');
+    res.setHeader('Content-Disposition', 'attachment; filename="zsetu.php"');
     
     // Construct single-file gorgeous PHP/HTML code
     const phpCode = `<?php
 /**
- * Deal Bridge - Institutional Real Estate Exchange
+ * Zsetu - Institutional Real Estate Exchange
  * Hostinger Custom Deployment Package (PHP + Tailwind + Live Mockups)
  * Strictly conforms to custom HTML template design guidelines.
  */
@@ -387,7 +387,7 @@ $view = $_GET['view'] ?? 'landing';
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Deal Bridge | Institutional Real Estate Exchange</title>
+    <title>Zsetu | Institutional Real Estate Exchange</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com?plugins=forms"></script>
     <!-- Icon and Font libraries -->
@@ -428,7 +428,7 @@ $view = $_GET['view'] ?? 'landing';
     <header class="fixed top-0 w-full z-50 header-bg border-b border-slate-800 h-16 flex items-center justify-between px-6">
         <a href="?view=landing" class="flex items-center gap-2">
             <span class="material-symbols-outlined text-[#7bd0ff]" style="font-variation-settings: 'FILL' 1;">handshake</span>
-            <span class="text-xl font-bold font-display text-white tracking-tight">Deal Bridge</span>
+            <span class="text-xl font-bold font-display text-white tracking-tight">Zsetu</span>
         </a>
         <nav class="hidden md:flex gap-6 items-center">
             <a href="?view=landing" class="text-sm font-semibold transition-colors <?php echo $view === 'landing' ? 'text-[#7bd0ff]' : 'text-slate-300 hover:text-white'; ?>">Home</a>
@@ -704,7 +704,7 @@ $view = $_GET['view'] ?? 'landing';
     <footer class="bg-slate-950 border-t border-slate-800 py-6 mt-12">
         <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4 text-xs text-slate-400">
             <div>
-                <p>&copy; 2026 Deal Bridge. Secure Institutional Real Estate Ledger. All rights reserved.</p>
+                <p>&copy; 2026 Zsetu. Secure Institutional Real Estate Ledger. All rights reserved.</p>
             </div>
             <div class="flex gap-4">
                 <a href="#" class="hover:text-white">Support Services</a>

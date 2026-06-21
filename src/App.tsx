@@ -244,8 +244,8 @@ export default function App() {
       <footer className="bg-white border-t border-slate-200 py-8">
         <div className="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-6 text-xs text-slate-500">
           <div className="space-y-1 text-center md:text-left">
-            <p className="font-display font-medium text-slate-900 text-sm">Deal Bridge Exchange Network</p>
-            <p>&copy; 2426 Deal Bridge. Secure Institutional Real Estate Ledger. All rights reserved.</p>
+            <p className="font-display font-medium text-slate-900 text-sm">Zsetu Exchange Network</p>
+            <p>&copy; 2426 Zsetu. Secure Institutional Real Estate Ledger. All rights reserved.</p>
           </div>
           <div className="flex gap-6">
             <a href="#" onClick={() => setCurrentView('landing')} className="hover:text-slate-950 transition-colors">Support Center</a>
