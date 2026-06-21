@@ -2,7 +2,8 @@ import express from 'express';
 import path from 'path';
 import { createServer as createViteServer } from 'vite';
 import { INITIAL_LISTINGS, INITIAL_REQUIREMENTS, INITIAL_ACTIVITIES } from './src/data.js';
-import { InventoryItem, BuyerRequirement } from './src/types.js';
+import { InventoryItem, BuyerRequirement, LogActivity } from './src/types.js';
+import { initDb, run, all, get } from './db.js';
 
 async function startServer() {
   const app = express();
@@ -10,10 +11,8 @@ async function startServer() {
 
   app.use(express.json());
 
-  // In-Memory Database State
-  let DB_LISTINGS: InventoryItem[] = [...INITIAL_LISTINGS];
-  let DB_REQUIREMENTS: BuyerRequirement[] = [...INITIAL_REQUIREMENTS];
-  let DB_ACTIVITIES = [...INITIAL_ACTIVITIES];
+  // Initialize SQLite database table schemas and seed them
+  await initDb();
 
   // Helper: Calculate Match Score between listing and details
   function calculateScore(listing: InventoryItem, requirement: BuyerRequirement): number {
@@ -44,119 +43,213 @@ async function startServer() {
   }
 
   // API Endpoints
-  app.get('/api/listings', (req, res) => {
-    res.json(DB_LISTINGS);
+  app.get('/api/listings', async (req, res) => {
+    try {
+      const rows = await all<any>('SELECT * FROM listings ORDER BY rowid DESC');
+      const listings = rows.map(r => ({
+        ...r,
+        tags: typeof r.tags === 'string' ? JSON.parse(r.tags) : r.tags
+      }));
+      res.json(listings);
+    } catch (err: any) {
+      console.error("GET /api/listings error:", err);
+      res.status(500).json({ error: err.message });
+    }
   });
 
-  app.post('/api/listings', (req, res) => {
-    const newListing: InventoryItem = {
-      id: `DB-${Math.floor(1000 + Math.random() * 9000)}`,
-      title: req.body.title || 'Property Listing',
-      type: req.body.type || 'Commercial',
-      location: req.body.location || 'Unknown Location',
-      budgetRange: req.body.budgetRange || '$5M - $10M',
-      configuration: req.body.configuration || 'Shell & Core Office',
-      totalSize: req.body.totalSize || '15,000 SQ FT',
-      paymentMethod: req.body.paymentMethod || 'Escrow / Smart Contract',
-      purpose: req.body.purpose || 'Sale',
-      valuation: req.body.valuation || '$7.5M',
-      yieldOpt: req.body.yieldOpt || 'Yield: 6.8%',
-      status: 'Active',
-      image: req.body.image || 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80',
-      tags: req.body.tags || ['Fiber Optic Ready', '24/7 Security'],
-      description: req.body.description || 'Institutional listing published inside the Deal Bridge secure network.',
-      matchScore: Math.floor(82 + Math.random() * 16)
-    };
+  app.post('/api/listings', async (req, res) => {
+    try {
+      const newListing: InventoryItem = {
+        id: `DB-${Math.floor(1000 + Math.random() * 9000)}`,
+        title: req.body.title || 'Property Listing',
+        type: req.body.type || 'Commercial',
+        location: req.body.location || 'Unknown Location',
+        budgetRange: req.body.budgetRange || '$5M - $10M',
+        configuration: req.body.configuration || 'Shell & Core Office',
+        totalSize: req.body.totalSize || '15,000 SQ FT',
+        paymentMethod: req.body.paymentMethod || 'Escrow / Smart Contract',
+        purpose: req.body.purpose || 'Sale',
+        valuation: req.body.valuation || '$7.5M',
+        yieldOpt: req.body.yieldOpt || 'Yield: 6.8%',
+        status: 'Active',
+        image: req.body.image || 'https://images.unsplash.com/photo-1486406146926-c627a92ad1ab?auto=format&fit=crop&q=80',
+        tags: req.body.tags || ['Fiber Optic Ready', '24/7 Security'],
+        description: req.body.description || 'Institutional listing published inside the Deal Bridge secure network.',
+        matchScore: Math.floor(82 + Math.random() * 16)
+      };
 
-    DB_LISTINGS.unshift(newListing);
+      await run(`
+        INSERT INTO listings (id, title, type, location, budgetRange, configuration, totalSize, paymentMethod, purpose, valuation, yieldOpt, status, image, tags, description, matchScore)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `, [
+        newListing.id,
+        newListing.title,
+        newListing.type,
+        newListing.location,
+        newListing.budgetRange,
+        newListing.configuration,
+        newListing.totalSize,
+        newListing.paymentMethod,
+        newListing.purpose,
+        newListing.valuation,
+        newListing.yieldOpt,
+        newListing.status,
+        newListing.image,
+        JSON.stringify(newListing.tags),
+        newListing.description || null,
+        newListing.matchScore || null
+      ]);
 
-    // Add activity log
-    DB_ACTIVITIES.unshift({
-      id: `ACT-${Date.now()}`,
-      type: 'post',
-      title: 'New Inventory Posting',
-      description: `${newListing.title} added in ${newListing.location} (${newListing.totalSize})`,
-      timestamp: 'Just now',
-      tag: 'AGENT BLUE',
-      color: 'blue'
-    });
+      // Add activity log
+      const act1 = {
+        id: `ACT-${Date.now()}`,
+        type: 'post',
+        title: 'New Inventory Posting',
+        description: `${newListing.title} added in ${newListing.location} (${newListing.totalSize})`,
+        timestamp: 'Just now',
+        tag: 'AGENT BLUE',
+        color: 'blue'
+      };
+      await run(`
+        INSERT INTO activities (id, type, title, description, timestamp, tag, color)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `, [act1.id, act1.type, act1.title, act1.description, act1.timestamp, act1.tag, act1.color]);
 
-    // Check if it matches existing requirements and log
-    DB_REQUIREMENTS.forEach(req => {
-      const matchScore = calculateScore(newListing, req);
-      if (matchScore > 80) {
-        DB_ACTIVITIES.unshift({
-          id: `ACT-M-${Date.now()}`,
-          type: 'match',
-          title: 'New Match Found',
-          description: `${newListing.title} matches Requirement #${req.id} (${matchScore}% Match Score)`,
-          timestamp: 'Just now',
-          tag: 'SUCCESS GREEN',
-          color: 'green'
-        });
+      // Check if it matches existing requirements and log
+      const dbReqs = await all<BuyerRequirement>('SELECT * FROM requirements');
+      for (const reqObj of dbReqs) {
+        const matchScore = calculateScore(newListing, reqObj);
+        if (matchScore > 80) {
+          const actM = {
+            id: `ACT-M-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+            type: 'match',
+            title: 'New Match Found',
+            description: `${newListing.title} matches Requirement #${reqObj.id} (${matchScore}% Match Score)`,
+            timestamp: 'Just now',
+            tag: 'SUCCESS GREEN',
+            color: 'green'
+          };
+          await run(`
+            INSERT INTO activities (id, type, title, description, timestamp, tag, color)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+          `, [actM.id, actM.type, actM.title, actM.description, actM.timestamp, actM.tag, actM.color]);
+        }
       }
-    });
 
-    res.status(201).json(newListing);
+      res.status(201).json(newListing);
+    } catch (err: any) {
+      console.error("POST /api/listings error:", err);
+      res.status(500).json({ error: err.message });
+    }
   });
 
-  app.get('/api/requirements', (req, res) => {
-    res.json(DB_REQUIREMENTS);
+  app.get('/api/requirements', async (req, res) => {
+    try {
+      const requirements = await all<BuyerRequirement>('SELECT * FROM requirements ORDER BY rowid DESC');
+      res.json(requirements);
+    } catch (err: any) {
+      console.error("GET /api/requirements error:", err);
+      res.status(500).json({ error: err.message });
+    }
   });
 
-  app.post('/api/requirements', (req, res) => {
-    const newReq: BuyerRequirement = {
-      id: `REQ-${Math.floor(100 + Math.random() * 900)}`,
-      buyerId: req.body.buyerId || 'BY-5098-TH',
-      targetLocation: req.body.targetLocation || 'Mayfair District, London',
-      sizeRequired: req.body.sizeRequired || '15,000 - 25,000 SQ FT',
-      societyName: req.body.societyName || 'Prime Block',
-      configuration: req.body.configuration || 'Grade A Office Space',
-      minBudget: req.body.minBudget || '$5M',
-      maxBudget: req.body.maxBudget || '$10M',
-      paymentMethod: req.body.paymentMethod || 'Escrow / Smart Contract',
-      purpose: req.body.purpose || 'Investment'
-    };
+  app.post('/api/requirements', async (req, res) => {
+    try {
+      const newReq: BuyerRequirement = {
+        id: `REQ-${Math.floor(100 + Math.random() * 900)}`,
+        buyerId: req.body.buyerId || 'BY-5098-TH',
+        targetLocation: req.body.targetLocation || 'Mayfair District, London',
+        sizeRequired: req.body.sizeRequired || '15,000 - 25,000 SQ FT',
+        societyName: req.body.societyName || 'Prime Block',
+        configuration: req.body.configuration || 'Grade A Office Space',
+        minBudget: req.body.minBudget || '$5M',
+        maxBudget: req.body.maxBudget || '$10M',
+        paymentMethod: req.body.paymentMethod || 'Escrow / Smart Contract',
+        purpose: req.body.purpose || 'Investment'
+      };
 
-    DB_REQUIREMENTS.unshift(newReq);
+      await run(`
+        INSERT INTO requirements (id, buyerId, targetLocation, sizeRequired, societyName, configuration, minBudget, maxBudget, paymentMethod, purpose)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `, [
+        newReq.id,
+        newReq.buyerId,
+        newReq.targetLocation,
+        newReq.sizeRequired,
+        newReq.societyName || null,
+        newReq.configuration,
+        newReq.minBudget,
+        newReq.maxBudget,
+        newReq.paymentMethod,
+        newReq.purpose
+      ]);
 
-    // Add Activity
-    DB_ACTIVITIES.unshift({
-      id: `ACT-${Date.now()}`,
-      type: 'post',
-      title: 'New Buyer Requirement',
-      description: `Requirement #${newReq.id} published for ${newReq.configuration} in ${newReq.targetLocation}`,
-      timestamp: 'Just now',
-      tag: 'BUYER PURPLE',
-      color: 'gray'
-    });
+      // Add Activity
+      const actReq = {
+        id: `ACT-${Date.now()}`,
+        type: 'post',
+        title: 'New Buyer Requirement',
+        description: `Requirement #${newReq.id} published for ${newReq.configuration} in ${newReq.targetLocation}`,
+        timestamp: 'Just now',
+        tag: 'BUYER PURPLE',
+        color: 'gray'
+      };
+      await run(`
+        INSERT INTO activities (id, type, title, description, timestamp, tag, color)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `, [actReq.id, actReq.type, actReq.title, actReq.description, actReq.timestamp, actReq.tag, actReq.color]);
 
-    // Find and calculate matching inventory listings
-    DB_LISTINGS.forEach(listing => {
-      const matchScore = calculateScore(listing, newReq);
-      if (matchScore > 80) {
-        DB_ACTIVITIES.unshift({
-          id: `ACT-M-${Date.now()}-${listing.id}`,
-          type: 'match',
-          title: 'Inventory Matched',
-          description: `${listing.title} matches your new requirement (${matchScore}% Match Score)`,
-          timestamp: 'Just now',
-          tag: 'SUCCESS GREEN',
-          color: 'green'
-        });
+      // Find and calculate matching inventory listings
+      const dbListingsRaw = await all<any>('SELECT * FROM listings');
+      const dbListings = dbListingsRaw.map(r => ({
+        ...r,
+        tags: typeof r.tags === 'string' ? JSON.parse(r.tags) : r.tags
+      }));
+
+      for (const listing of dbListings) {
+        const matchScore = calculateScore(listing, newReq);
+        if (matchScore > 80) {
+          const actMatch = {
+            id: `ACT-M-${Date.now()}-${listing.id}`,
+            type: 'match',
+            title: 'Inventory Matched',
+            description: `${listing.title} matches your new requirement (${matchScore}% Match Score)`,
+            timestamp: 'Just now',
+            tag: 'SUCCESS GREEN',
+            color: 'green'
+          };
+          await run(`
+            INSERT INTO activities (id, type, title, description, timestamp, tag, color)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+          `, [actMatch.id, actMatch.type, actMatch.title, actMatch.description, actMatch.timestamp, actMatch.tag, actMatch.color]);
+        }
       }
-    });
 
-    res.status(201).json(newReq);
+      res.status(201).json(newReq);
+    } catch (err: any) {
+      console.error("POST /api/requirements error:", err);
+      res.status(500).json({ error: err.message });
+    }
   });
 
-  app.get('/api/activities', (req, res) => {
-    res.json(DB_ACTIVITIES);
+  app.get('/api/activities', async (req, res) => {
+    try {
+      const activities = await all<LogActivity>('SELECT * FROM activities ORDER BY rowid DESC');
+      res.json(activities);
+    } catch (err: any) {
+      console.error("GET /api/activities error:", err);
+      res.status(500).json({ error: err.message });
+    }
   });
 
-  app.post('/api/activities/clear', (req, res) => {
-    DB_ACTIVITIES = [];
-    res.json({ message: 'Cleared' });
+  app.post('/api/activities/clear', async (req, res) => {
+    try {
+      await run('DELETE FROM activities');
+      res.json({ message: 'Cleared' });
+    } catch (err: any) {
+      console.error("POST /api/activities/clear error:", err);
+      res.status(500).json({ error: err.message });
+    }
   });
 
   // Unique Single-Page PHP Export Endpoint for Hostinger Custom Deployment!
