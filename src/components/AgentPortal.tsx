@@ -23,9 +23,10 @@ export default function AgentPortal({
 }: AgentPortalProps) {
   // Login Form states
   const [agentId, setAgentId] = useState('AGT-4492-BX');
-  const [password, setPassword] = useState('••••••••');
+  const [password, setPassword] = useState('password123');
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   // Partnership form states
   const [fullName, setFullname] = useState('Jonathan Doe');
@@ -48,38 +49,62 @@ export default function AgentPortal({
   const [postPayment, setPostPayment] = useState('Escrow / Smart Contract');
   const [postValuation, setPostValuation] = useState('$12,500,000');
 
-  // Handle mock Authentication Login API
-  const handleLogin = (e: React.FormEvent) => {
+  // Handle real Authentication Login API
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsAuthenticating(true);
-    setTimeout(() => {
-      setIsAuthenticating(false);
-      setAgent({
-        id: agentId,
-        name: 'Alexander Sterling',
-        companyName: 'Sterling Global Realty',
-        mobileNo: '+1 (555) 012-3456',
-        emailId: 'a.sterling@dealbridge.com',
-        reraNo: '#RERA-8832-TX-2024',
-        avatarUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCn-nUCpaWnqcC1zsXBZKXgOpcBbwKeZhKjUX2oqZJwYCW3O4USfRvD6y3IVqpSbe5f9v4PT8pskBwdUF5gBm_UBvUMm39dttBXmaJ5WdRngBp_R8x1pW5Rgz-XrJHXPP-fsng4eM5cU4WKnH5TAyAihfK6W1xv9IOuBmr5vT7Tx55vzc6y2rbzp1X-cz8ce5u6yuj3REisTDK4K8L3PtOoiIxO_7o2rBoQeGf6iSma1z_yZ02eRPxw-GoWK8KwICTDYGVpWuepaA22'
+    setAuthError(null);
+    try {
+      const res = await fetch('/api/auth/login-agent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ agentId, password })
       });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Login failed');
+      }
+      setAgent(data);
       setWorkflow('dashboard');
-    }, 1200);
+    } catch (err: any) {
+      console.error(err);
+      setAuthError(err.message || 'Authentication failed');
+    } finally {
+      setIsAuthenticating(false);
+    }
   };
 
-  // Handle mock Partnership Stepper submit
-  const handlePartnershipSubmit = (e: React.FormEvent) => {
+  // Handle real Partnership Stepper submit
+  const handlePartnershipSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setAgent({
-      id: 'AGT-' + Math.floor(1000 + Math.random() * 9000),
-      name: fullName,
-      companyName: company,
-      mobileNo: `${phonePrefix} ${phone}`,
-      emailId: email,
-      reraNo: `#RERA-${gstin}`,
-      avatarUrl: uploadedPhoto || 'https://lh3.googleusercontent.com/aida-public/AB6AXuCn-nUCpaWnqcC1zsXBZKXgOpcBbwKeZhKjUX2oqZJwYCW3O4USfRvD6y3IVqpSbe5f9v4PT8pskBwdUF5gBm_UBvUMm39dttBXmaJ5WdRngBp_R8x1pW5Rgz-XrJHXPP-fsng4eM5cU4WKnH5TAyAihfK6W1xv9IOuBmr5vT7Tx55vzc6y2rbzp1X-cz8ce5u6yuj3REisTDK4K8L3PtOoiIxO_7o2rBoQeGf6iSma1z_yZ02eRPxw-GoWK8KwICTDYGVpWuepaA22'
-    });
-    setWorkflow('dashboard');
+    setIsAuthenticating(true);
+    setAuthError(null);
+    try {
+      const res = await fetch('/api/auth/register-agent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: fullName,
+          companyName: company,
+          mobileNo: `${phonePrefix} ${phone}`,
+          emailId: email,
+          reraNo: `#RERA-${gstin}`,
+          avatarUrl: uploadedPhoto || 'https://lh3.googleusercontent.com/aida-public/AB6AXuCn-nUCpaWnqcC1zsXBZKXgOpcBbwKeZhKjUX2oqZJwYCW3O4USfRvD6y3IVqpSbe5f9v4PT8pskBwdUF5gBm_UBvUMm39dttBXmaJ5WdRngBp_R8x1pW5Rgz-XrJHXPP-fsng4eM5cU4WKnH5TAyAihfK6W1xv9IOuBmr5vT7Tx55vzc6y2rbzp1X-cz8ce5u6yuj3REisTDK4K8L3PtOoiIxO_7o2rBoQeGf6iSma1z_yZ02eRPxw-GoWK8KwICTDYGVpWuepaA22',
+          password: 'password123'
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Registration failed');
+      }
+      setAgent(data);
+      setWorkflow('dashboard');
+    } catch (err: any) {
+      console.error(err);
+      setAuthError(err.message || 'Registration failed');
+    } finally {
+      setIsAuthenticating(false);
+    }
   };
 
   // Post dynamic Listing handler
@@ -123,6 +148,11 @@ export default function AgentPortal({
 
               {/* Login Card */}
               <div className="bg-white border border-slate-200 rounded-xl p-8 space-y-6 shadow-md relative backdrop-blur-sm">
+                {authError && (
+                  <div className="bg-rose-50 text-rose-600 p-3 rounded text-xs font-semibold border border-rose-100 mb-2">
+                    {authError}
+                  </div>
+                )}
                 <form onSubmit={handleLogin} className="space-y-4">
                   {/* Agent ID */}
                   <div className="space-y-2">
@@ -213,6 +243,11 @@ export default function AgentPortal({
 
               {/* Form card */}
               <div className="bg-white border border-slate-200 rounded-xl p-8 space-y-6 shadow-md">
+                {authError && (
+                  <div className="bg-rose-50 text-rose-600 p-3 rounded text-xs font-semibold border border-rose-100 mb-2">
+                    {authError}
+                  </div>
+                )}
                 <form onSubmit={handlePartnershipSubmit} className="space-y-5 text-sm md:text-xs">
                   
                   {/* Full Name */}

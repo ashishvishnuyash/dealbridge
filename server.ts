@@ -252,6 +252,131 @@ async function startServer() {
     }
   });
 
+  // REAL AUTHENTICATION ENDPOINTS
+  app.post('/api/auth/register-agent', async (req, res) => {
+    try {
+      const { name, companyName, mobileNo, emailId, reraNo, avatarUrl, password } = req.body;
+      if (!name || !emailId || !password) {
+        return res.status(400).json({ error: 'Name, email, and password are required' });
+      }
+
+      // Check if email already registered
+      const agents = await all<any>('SELECT * FROM agents');
+      if (agents.some(a => a.emailId.toLowerCase() === emailId.toLowerCase())) {
+        return res.status(400).json({ error: 'Email already registered' });
+      }
+
+      const id = 'AGT-' + Math.floor(1000 + Math.random() * 9000);
+      await run(`
+        INSERT INTO agents (id, name, companyName, mobileNo, emailId, reraNo, avatarUrl, password)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+      `, [
+        id,
+        name,
+        companyName || 'Sterling Global Realty',
+        mobileNo || '+1 (555) 012-3456',
+        emailId,
+        reraNo || '#RERA-8832-TX-2024',
+        avatarUrl || 'https://lh3.googleusercontent.com/aida-public/AB6AXuCn-nUCpaWnqcC1zsXBZKXgOpcBbwKeZhKjUX2oqZJwYCW3O4USfRvD6y3IVqpSbe5f9v4PT8pskBwdUF5gBm_UBvUMm39dttBXmaJ5WdRngBp_R8x1pW5Rgz-XrJHXPP-fsng4eM5cU4WKnH5TAyAihfK6W1xv9IOuBmr5vT7Tx55vzc6y2rbzp1X-cz8ce5u6yuj3REisTDK4K8L3PtOoiIxO_7o2rBoQeGf6iSma1z_yZ02eRPxw-GoWK8KwICTDYGVpWuepaA22',
+        password
+      ]);
+
+      const newAgent = { id, name, companyName, mobileNo, emailId, reraNo };
+      res.status(201).json(newAgent);
+    } catch (err: any) {
+      console.error("register-agent error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post('/api/auth/login-agent', async (req, res) => {
+    try {
+      const { agentId, password } = req.body;
+      if (!agentId || !password) {
+        return res.status(400).json({ error: 'Agent ID/Email and password are required' });
+      }
+
+      const agents = await all<any>('SELECT * FROM agents');
+      const agent = agents.find(a => 
+        (a.id.toLowerCase() === agentId.toLowerCase() || a.emailId.toLowerCase() === agentId.toLowerCase()) && 
+        a.password === password
+      );
+
+      if (!agent) {
+        return res.status(401).json({ error: 'Invalid credentials. Please make sure your credentials are correct.' });
+      }
+
+      // Return user without password
+      const { password: _, ...safeAgent } = agent;
+      res.json(safeAgent);
+    } catch (err: any) {
+      console.error("login-agent error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post('/api/auth/register-buyer', async (req, res) => {
+    try {
+      const { name, companyName, mobileNo, emailId, reraNo, portfolioSize, primaryAssetClass, avatarUrl, password } = req.body;
+      if (!name || !emailId || !password) {
+        return res.status(400).json({ error: 'Name, email, and password are required' });
+      }
+
+      const buyers = await all<any>('SELECT * FROM buyers');
+      if (buyers.some(b => b.emailId.toLowerCase() === emailId.toLowerCase())) {
+        return res.status(400).json({ error: 'Email already registered' });
+      }
+
+      const id = 'BY-' + Math.floor(1000 + Math.random() * 9000);
+      await run(`
+        INSERT INTO buyers (id, name, companyName, mobileNo, emailId, reraNo, portfolioSize, primaryAssetClass, avatarUrl, password)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      `, [
+        id,
+        name,
+        companyName || 'Thorne Capital Partners',
+        mobileNo || '+1 (555) 987-6543',
+        emailId,
+        reraNo || '#RERA-8832-TX-2024',
+        portfolioSize || '$25M - $100M',
+        primaryAssetClass || 'Commercial',
+        avatarUrl || 'https://lh3.googleusercontent.com/aida-public/AB6AXu-t4tFILC86BV5-pups-w_Ab5jKF1wSyo2glfXkwvivWX-IkdzOSKym8yV9290ARGk9bhS6ks7vSyxIk7Afgcw1wuWXPCa9CyJaVtS2ja7TzqCu6ago22GY5sjqqx8dSTfPthQ16cw-tD8ZQiYFNVH2XDiTCaD9pac-2sIuC6Ss9pps_y7O281NnswK88-Rbqq1H6KJ23FpIRdA-pmRPYj8PHExB5M0mbhGc5ThKHMrJ8nvgXzIfcMsgsq0iEEqJUB_Fh8u9GRQEgz',
+        password
+      ]);
+
+      const newBuyer = { id, name, companyName, mobileNo, emailId, reraNo, portfolioSize, primaryAssetClass };
+      res.status(201).json(newBuyer);
+    } catch (err: any) {
+      console.error("register-buyer error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  app.post('/api/auth/login-buyer', async (req, res) => {
+    try {
+      const { buyerId, password } = req.body;
+      if (!buyerId || !password) {
+        return res.status(400).json({ error: 'Buyer ID/Email and password are required' });
+      }
+
+      const buyers = await all<any>('SELECT * FROM buyers');
+      const buyer = buyers.find(b => 
+        (b.id.toLowerCase() === buyerId.toLowerCase() || b.emailId.toLowerCase() === buyerId.toLowerCase()) && 
+        b.password === password
+      );
+
+      if (!buyer) {
+        return res.status(401).json({ error: 'Invalid credentials. Please make sure your credentials are correct.' });
+      }
+
+      const { password: _, ...safeBuyer } = buyer;
+      res.json(safeBuyer);
+    } catch (err: any) {
+      console.error("login-buyer error:", err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
   // Unique Single-Page PHP Export Endpoint for Hostinger Custom Deployment!
   app.get('/api/export-php', (req, res) => {
     res.setHeader('Content-Type', 'text/plain; charset=utf-8');

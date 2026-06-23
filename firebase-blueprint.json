@@ -1,0 +1,78 @@
+{
+  "entities": {
+    "Listing": {
+      "title": "Listing",
+      "description": "An institutional-grade real estate property listing published on the exchange.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "type": { "type": "string" },
+        "location": { "type": "string" },
+        "budgetRange": { "type": "string" },
+        "configuration": { "type": "string" },
+        "totalSize": { "type": "string" },
+        "paymentMethod": { "type": "string" },
+        "purpose": { "type": "string" },
+        "valuation": { "type": "string" },
+        "yieldOpt": { "type": "string" },
+        "status": { "type": "string" },
+        "image": { "type": "string" },
+        "tags": { "type": "array" },
+        "description": { "type": "string" },
+        "matchScore": { "type": "integer" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "title", "type", "location", "budgetRange", "configuration", "totalSize", "paymentMethod", "purpose", "valuation", "status", "image"]
+    },
+    "Requirement": {
+      "title": "Requirement",
+      "description": "A buyer profile detailing their intent and target purchase metrics.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "buyerId": { "type": "string" },
+        "targetLocation": { "type": "string" },
+        "sizeRequired": { "type": "string" },
+        "societyName": { "type": "string" },
+        "configuration": { "type": "string" },
+        "minBudget": { "type": "string" },
+        "maxBudget": { "type": "string" },
+        "paymentMethod": { "type": "string" },
+        "purpose": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "buyerId", "targetLocation", "sizeRequired", "configuration", "minBudget", "maxBudget", "paymentMethod", "purpose"]
+    },
+    "Activity": {
+      "title": "Activity",
+      "description": "Log logs tracking matching events, requirements publishing, or postings.",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "type": { "type": "string" },
+        "title": { "type": "string" },
+        "description": { "type": "string" },
+        "timestamp": { "type": "string" },
+        "tag": { "type": "string" },
+        "color": { "type": "string" },
+        "createdAt": { "type": "string" }
+      },
+      "required": ["id", "type", "title", "description", "timestamp", "tag", "color"]
+    }
+  },
+  "firestore": {
+    "listings/{listingId}": {
+      "schema": "Listing",
+      "description": "Vetted real estate listings."
+    },
+    "requirements/{requirementId}": {
+      "schema": "Requirement",
+      "description": "Active buying constraints."
+    },
+    "activities/{activityId}": {
+      "schema": "Activity",
+      "description": "Recent notifications and match alerts."
+    }
+  }
+}

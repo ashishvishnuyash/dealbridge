@@ -17,11 +17,6 @@ export default function DashboardStats({ activities, onClearActivities, listings
     { city: 'Dubai Marina', score: 64, color: '#64748b' }
   ];
 
-  // Direct Hostinger Export download executor
-  const handleHostingerExport = () => {
-    window.open('/api/export-php', '_blank');
-  };
-
   return (
     <div className="space-y-8 pb-16">
       {/* Intro */}
@@ -130,13 +125,14 @@ export default function DashboardStats({ activities, onClearActivities, listings
             We compiled a beautiful, self-contained single-page dynamic PHP application (`deal_bridge.php`) that runs out-of-the-box in standard shared PHP folders. This incorporates complete responsive Tailwind UI views, matching scoring logic, and session-based state management!
           </p>
         </div>
-        <button 
-          onClick={handleHostingerExport}
+        <a 
+          href="/api/export-php"
+          download="deal_bridge.php"
           className="px-8 py-4 bg-emerald-500 text-slate-950 rounded-lg font-display font-semibold hover:bg-emerald-400 transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-lg flex items-center justify-center gap-2 text-sm"
         >
           <span className="material-symbols-outlined text-sm font-semibold">cloud_download</span>
           <span>Download Hostinger PHP</span>
-        </button>
+        </a>
       </section>
     </div>
   );

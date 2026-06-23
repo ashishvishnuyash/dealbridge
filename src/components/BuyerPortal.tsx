@@ -23,8 +23,10 @@ export default function BuyerPortal({
 }: BuyerPortalProps) {
   // Login State
   const [buyerId, setBuyerId] = useState('BY-5098-TH');
+  const [password, setPassword] = useState('password123');
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [authError, setAuthError] = useState<string | null>(null);
 
   // Requirement Registration Stepper state
   const [fullName, setFullName] = useState('Marcus Thorne');
@@ -43,6 +45,7 @@ export default function BuyerPortal({
 
   // Selected matching item for modal detail
   const [selectedAsset, setSelectedAsset] = useState<InventoryItem | null>(null);
+  const [bidSuccessMessage, setBidSuccessMessage] = useState<string | null>(null);
 
   // Simulated algorithm to calculate matching score in real-time
   const getMatchScore = (listing: InventoryItem): number => {
@@ -54,50 +57,71 @@ export default function BuyerPortal({
     return Math.min(base, 99);
   };
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsAuthenticating(true);
-    setTimeout(() => {
-      setIsAuthenticating(false);
-      setBuyer({
-        id: buyerId,
-        name: 'Marcus Thorne',
-        companyName: 'Thorne Capital Partners',
-        mobileNo: '+1 (555) 987-6543',
-        emailId: 'm.thorne@thornecapital.com',
-        reraNo: '#RERA-8832-TX-2024',
-        portfolioSize: '$25M - $100M',
-        primaryAssetClass: 'Commercial',
-        avatarUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXu-t4tFILC86BV5-pups-w_Ab5jKF1wSyo2glfXkwvivWX-IkdzOSKym8yV9290ARGk9bhS6ks7vSyxIk7Afgcw1wuWXPCa9CyJaVtS2ja7TzqCu6ago22GY5sjqqx8dSTfPthQ16cw-tD8ZQiYFNVH2XDiTCaD9pac-2sIuC6Ss9pps_y7O281NnswK88-Rbqq1H6KJ23FpIRdA-pmRPYj8PHExB5M0mbhGc5ThKHMrJ8nvgXzIfcMsgsq0iEEqJUB_Fh8u9GRQEgz'
+    setAuthError(null);
+    try {
+      const res = await fetch('/api/auth/login-buyer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ buyerId, password })
       });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Login failed');
+      }
+      setBuyer(data);
       setWorkflow('dashboard');
-    }, 1000);
+    } catch (err: any) {
+      console.error(err);
+      setAuthError(err.message || 'Authentication failed');
+    } finally {
+      setIsAuthenticating(false);
+    }
   };
 
-  const handleProfileSubmit = (e: React.FormEvent) => {
+  const handleProfileSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setBuyer({
-      id: 'BY-' + Math.floor(1000 + Math.random() * 9000),
-      name: fullName,
-      companyName: org,
-      mobileNo: phone,
-      emailId: email,
-      reraNo: '#RERA-8832-TX-2024',
-      portfolioSize,
-      primaryAssetClass: primaryClass,
-      avatarUrl: 'https://lh3.googleusercontent.com/aida-public/AB6AXu-t4tFILC86BV5-pups-w_Ab5jKF1wSyo2glfXkwvivWX-IkdzOSKym8yV9290ARGk9bhS6ks7vSyxIk7Afgcw1wuWXPCa9CyJaVtS2ja7TzqCu6ago22GY5sjqqx8dSTfPthQ16cw-tD8ZQiYFNVH2XDiTCaD9pac-2sIuC6Ss9pps_y7O281NnswK88-Rbqq1H6KJ23FpIRdA-pmRPYj8PHExB5M0mbhGc5ThKHMrJ8nvgXzIfcMsgsq0iEEqJUB_Fh8u9GRQEgz'
-    });
-    onSubmitRequirement({
-      targetLocation,
-      sizeRequired: sizeReq,
-      configuration: 'Grade A Office Space',
-      minBudget,
-      maxBudget,
-      paymentMethod: payment,
-      purpose,
-      societyName: society
-    });
-    setWorkflow('dashboard');
+    setIsAuthenticating(true);
+    setAuthError(null);
+    try {
+      const res = await fetch('/api/auth/register-buyer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: fullName,
+          companyName: org,
+          mobileNo: phone,
+          emailId: email,
+          reraNo: '#RERA-8832-TX-2024',
+          portfolioSize,
+          primaryAssetClass: primaryClass,
+          password: 'password123'
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Registration failed');
+      }
+      setBuyer(data);
+      onSubmitRequirement({
+        targetLocation,
+        sizeRequired: sizeReq,
+        configuration: 'Grade A Office Space',
+        minBudget,
+        maxBudget,
+        paymentMethod: payment,
+        purpose,
+        societyName: society
+      });
+      setWorkflow('dashboard');
+    } catch (err: any) {
+      console.error(err);
+      setAuthError(err.message || 'Registration failed');
+    } finally {
+      setIsAuthenticating(false);
+    }
   };
 
   return (
@@ -122,6 +146,11 @@ export default function BuyerPortal({
 
               {/* Login card container */}
               <div className="bg-white border border-slate-200 rounded-xl p-8 space-y-6 shadow-md relative backdrop-blur-sm">
+                {authError && (
+                  <div className="bg-rose-50 text-rose-600 p-3 rounded text-xs font-semibold border border-rose-100 mb-2">
+                    {authError}
+                  </div>
+                )}
                 <form onSubmit={handleLogin} className="space-y-4">
                   {/* Buyer ID */}
                   <div className="space-y-2">
@@ -156,6 +185,8 @@ export default function BuyerPortal({
                         required
                         type={showPassword ? 'text' : 'password'} 
                         id="buyer-password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
                         placeholder="••••••••"
                         className="w-full pl-10 pr-10 py-3 bg-slate-50 border border-slate-200 focus:border-[#005bc4] rounded text-slate-900 text-sm outline-none transition-all"
                       />
@@ -210,6 +241,11 @@ export default function BuyerPortal({
 
               {/* Requirement Card */}
               <div className="bg-white border border-slate-200 rounded-xl p-8 space-y-6 shadow-md">
+                {authError && (
+                  <div className="bg-rose-50 text-rose-600 p-3 rounded text-xs font-semibold border border-rose-100 mb-2">
+                    {authError}
+                  </div>
+                )}
                 <form onSubmit={handleProfileSubmit} className="space-y-4 text-xs">
                   
                   {/* General Contact Info Block */}
@@ -523,7 +559,7 @@ export default function BuyerPortal({
               <div className="relative h-56 bg-slate-100">
                 <img src={selectedAsset.image} alt={selectedAsset.title} className="w-full h-full object-cover" />
                 <button 
-                  onClick={() => setSelectedAsset(null)}
+                  onClick={() => { setSelectedAsset(null); setBidSuccessMessage(null); }}
                   className="absolute top-3 right-3 bg-white/90 p-1.5 rounded-full text-slate-800 hover:text-slate-950 shadow-sm cursor-pointer"
                 >
                   <span className="material-symbols-outlined text-base">close</span>
@@ -562,23 +598,39 @@ export default function BuyerPortal({
                   </div>
                 </div>
 
-                <div className="flex gap-2">
-                  <button 
-                    onClick={() => {
-                      alert(`Institutional escrow bidding initialized for ${selectedAsset.title} valued at ${selectedAsset.valuation}`);
-                      setSelectedAsset(null);
-                    }}
-                    className="flex-1 py-3 bg-[#0a2540] hover:bg-[#14365c] text-white rounded font-bold font-display text-xs cursor-pointer text-center shadow-lg uppercase tracking-wide transition-all"
-                  >
-                    Transmit Bid Proposal
-                  </button>
-                  <button 
-                    onClick={() => setSelectedAsset(null)}
-                    className="py-3 px-6 border border-slate-200 text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-50 rounded font-semibold text-xs cursor-pointer text-center"
-                  >
-                    Close Parameters
-                  </button>
-                </div>
+                {bidSuccessMessage ? (
+                  <div className="bg-emerald-50 border border-emerald-200 text-emerald-800 p-4 rounded-lg flex items-center gap-3">
+                    <span className="material-symbols-outlined text-emerald-600">verified_user</span>
+                    <div className="text-xs">
+                      <p className="font-bold">Transmission Sent</p>
+                      <p className="mt-0.5">{bidSuccessMessage}</p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="flex gap-2">
+                    <button 
+                      onClick={() => {
+                        setBidSuccessMessage(`Escrow bidding initiated for ${selectedAsset.title} valued at ${selectedAsset.valuation}`);
+                        setTimeout(() => {
+                          setBidSuccessMessage(null);
+                          setSelectedAsset(null);
+                        }, 2500);
+                      }}
+                      className="flex-1 py-3 bg-[#0a2540] hover:bg-[#14365c] text-white rounded font-bold font-display text-xs cursor-pointer text-center shadow-lg uppercase tracking-wide transition-all"
+                    >
+                      Transmit Bid Proposal
+                    </button>
+                    <button 
+                      onClick={() => {
+                        setSelectedAsset(null);
+                        setBidSuccessMessage(null);
+                      }}
+                      className="py-3 px-6 border border-slate-200 text-slate-600 hover:text-slate-900 bg-white hover:bg-slate-50 rounded font-semibold text-xs cursor-pointer text-center"
+                    >
+                      Close Parameters
+                    </button>
+                  </div>
+                )}
               </div>
             </motion.div>
           </div>

@@ -185,6 +185,18 @@ export default function App() {
         setCurrentView={setCurrentView} 
         agentLoggedIn={agentLoggedIn}
         buyerLoggedIn={buyerLoggedIn}
+        agent={agent}
+        buyer={buyer}
+        onLogoutAgent={() => {
+          setAgentLoggedIn(false);
+          setAgentWorkflow('login');
+          setCurrentView('landing');
+        }}
+        onLogoutBuyer={() => {
+          setBuyerLoggedIn(false);
+          setBuyerWorkflow('login');
+          setCurrentView('landing');
+        }}
       />
 
       {/* Main content body */}
